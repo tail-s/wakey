@@ -20,7 +20,8 @@ Work in progress toward **0.1.0**. Everything planned for 0.1.0 below is built a
 - English, Korean and Japanese, switchable in Settings without restarting.
 - System, Light and Dark appearance.
 - `--status` and `--snapshot` command-line options for checking the app without changing anything.
-- Build script that assembles and signs `Wakey.app`, and an icon script.
+- Build script that assembles and signs `Wakey.app` (optionally universal), plus DMG, notarization and icon scripts.
+- GitHub Actions workflow: tests and builds a DMG on every push; on a `v*` tag it also signs, notarizes and publishes a GitHub Release with this changelog's notes.
 - Unit tests for the decision engine, translations and Claude Code hook editing.
 - README in English, Korean and Japanese.
 

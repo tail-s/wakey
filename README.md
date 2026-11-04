@@ -128,7 +128,11 @@ Turn on *Keep going with the lid closed and no display*. Wakey puts the Mac to s
 
 ## Install
 
-Wakey hasn't been released yet. When 0.1.0 ships, it will be available from GitHub Releases, signed and notarized by Apple.
+1. Download **Wakey.dmg** from the [latest release](https://github.com/tail-s/wakey/releases/latest) (from 0.1.0 on).
+2. Open it and drag **Wakey** into the **Applications** folder.
+3. Open Wakey. Its icon appears in the menu bar.
+
+Releases are signed with Developer ID and notarized by Apple.
 
 ### Build from source
 
@@ -155,6 +159,24 @@ Other useful commands:
 | `build/Wakey.app/Contents/MacOS/Wakey --status` | Prints what Wakey detects and decides, without changing anything |
 | `build/Wakey.app/Contents/MacOS/Wakey --snapshot <folder>` | Saves screenshots of the menu and Settings in every language |
 | `swift scripts/make-icon.swift assets/icon.png assets` | Rebuilds the app icons from `assets/icon.png` |
+| `scripts/make-dmg.sh 0.1.0` | Packages `build/Wakey.app` into `build/Wakey-0.1.0.dmg` |
+
+### Releasing
+
+Pushing a tag like `v0.1.0` runs [GitHub Actions](.github/workflows/build.yml). It tests, builds a universal app, signs it with Developer ID, notarizes it, and publishes `Wakey-0.1.0.dmg` on GitHub Releases. The release notes are that version's section of [CHANGELOG.md](CHANGELOG.md).
+
+1. In CHANGELOG.md, rename `[Unreleased]` to the version, for example `## [0.1.0] - 2026-11-05`.
+2. Commit, then run `git tag v0.1.0 && git push origin main v0.1.0`.
+
+Signing and notarizing need these repository secrets. Without them the DMG is signed ad hoc and not notarized.
+
+| Secret | Value |
+|---|---|
+| `MACOS_CERT_P12` | Developer ID Application certificate (.p12), base64 |
+| `MACOS_CERT_PASSWORD` | Password of that .p12 |
+| `NOTARY_KEY_P8` | App Store Connect API key (.p8), base64 |
+| `NOTARY_KEY_ID` | Key ID of that API key |
+| `NOTARY_ISSUER_ID` | Issuer ID from App Store Connect |
 
 ---
 

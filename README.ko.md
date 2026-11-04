@@ -128,7 +128,11 @@ Mac을 쓰지 않으면 아래 단계를 차례로 거쳐요. **AI가 멈추는 
 
 ## 설치
 
-아직 출시 전이에요. 0.1.0이 나오면 Apple의 서명과 공증을 받아 GitHub Releases에서 받을 수 있어요.
+1. [최신 릴리스](https://github.com/tail-s/wakey/releases/latest)에서 **Wakey.dmg**를 받으세요 (0.1.0부터).
+2. 열어서 **Wakey**를 **응용 프로그램** 폴더로 끌어다 놓으세요.
+3. Wakey를 여세요. 메뉴 막대에 아이콘이 나타나요.
+
+릴리스는 Developer ID로 서명되고 Apple의 공증을 받아요.
 
 ### 소스에서 빌드하기
 
@@ -155,6 +159,24 @@ open build/Wakey.app
 | `build/Wakey.app/Contents/MacOS/Wakey --status` | 아무것도 바꾸지 않고, Wakey가 감지하고 판단한 내용을 출력 |
 | `build/Wakey.app/Contents/MacOS/Wakey --snapshot <폴더>` | 메뉴와 설정 창을 모든 언어로 캡처해 저장 |
 | `swift scripts/make-icon.swift assets/icon.png assets` | `assets/icon.png`로 앱 아이콘을 다시 만듦 |
+| `scripts/make-dmg.sh 0.1.0` | `build/Wakey.app`을 `build/Wakey-0.1.0.dmg`로 묶음 |
+
+### 릴리스하기
+
+`v0.1.0` 같은 태그를 푸시하면 [GitHub Actions](.github/workflows/build.yml)가 테스트, 유니버설 앱 빌드, Developer ID 서명, 공증을 거쳐 GitHub Releases에 `Wakey-0.1.0.dmg`를 올려요. 릴리스 노트는 [CHANGELOG.md](CHANGELOG.md)에서 그 버전 섹션을 가져와요.
+
+1. CHANGELOG.md에서 `[Unreleased]`를 버전으로 바꾸세요. 예: `## [0.1.0] - 2026-11-05`
+2. 커밋한 뒤 `git tag v0.1.0 && git push origin main v0.1.0`을 실행하세요.
+
+서명과 공증에는 아래 저장소 시크릿이 필요해요. 없으면 DMG가 임시(ad hoc) 서명되고 공증도 받지 않아요.
+
+| 시크릿 | 값 |
+|---|---|
+| `MACOS_CERT_P12` | Developer ID Application 인증서(.p12)를 base64로 |
+| `MACOS_CERT_PASSWORD` | 그 .p12의 암호 |
+| `NOTARY_KEY_P8` | App Store Connect API 키(.p8)를 base64로 |
+| `NOTARY_KEY_ID` | 그 API 키의 Key ID |
+| `NOTARY_ISSUER_ID` | App Store Connect의 Issuer ID |
 
 ---
 

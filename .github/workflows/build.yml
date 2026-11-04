@@ -1,0 +1,84 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-15
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Release signing; all optional. Without them the build is ad hoc signed and not
+      # notarized, and lid mode won't work in it.
+      MACOS_CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
+      MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+      NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
+      NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+      NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # build number = commit count
+
+      - name: Select newest Xcode
+        run: |
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
+          xcodebuild -version
+
+      - name: Test
+        run: swift test
+
+      - name: Import Developer ID certificate
+        if: env.MACOS_CERT_P12 != ''
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+          echo "$MACOS_CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/cert.p12" -P "$MACOS_CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          IDENTITY="$(security find-identity -v -p codesigning "$KEYCHAIN" | grep -o '"Developer ID Application: [^"]*"' | head -1 | tr -d '"')"
+          echo "SIGN_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
+
+      - name: Build app and DMG
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          [[ "$GITHUB_REF_TYPE" == "tag" ]] || VERSION="0.0.0-dev"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          # No certificate: sign ad hoc instead of looking for one in the runner's keychain.
+          export SIGN_IDENTITY="${SIGN_IDENTITY:--}"
+          UNIVERSAL=1 scripts/build-app.sh "$VERSION"
+          scripts/make-dmg.sh "$VERSION"
+
+      - name: Notarize
+        if: github.ref_type == 'tag' && env.SIGN_IDENTITY != '' && env.NOTARY_KEY_P8 != ''
+        run: |
+          echo "$NOTARY_KEY_P8" | base64 --decode > "$RUNNER_TEMP/AuthKey.p8"
+          NOTARY_KEY_PATH="$RUNNER_TEMP/AuthKey.p8" scripts/notarize.sh "$VERSION"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Wakey-dmg
+          path: build/*.dmg
+
+      - name: Publish release
+        if: github.ref_type == 'tag'
+        run: |
+          # Release notes = this version's section of CHANGELOG.md (falls back to generated notes)
+          awk -v v="$VERSION" '/^## / { p = index($0, "[" v "]") > 0; next } /^\[[0-9]/ { p = 0 } p' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+          if [[ -s "$RUNNER_TEMP/notes.md" ]]; then
+            gh release create "$GITHUB_REF_NAME" build/*.dmg --title "Wakey $VERSION" --notes-file "$RUNNER_TEMP/notes.md"
+          else
+            gh release create "$GITHUB_REF_NAME" build/*.dmg --title "Wakey $VERSION" --generate-notes
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

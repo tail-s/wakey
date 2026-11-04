@@ -128,7 +128,11 @@ Mac を使わずにいると、次の段階を順番に進みます。**AI が�
 
 ## インストール
 
-まだリリースされていません。0.1.0 の公開後は、Apple の署名と公証を受けたものを GitHub Releases からダウンロードできます。
+1. [最新リリース](https://github.com/tail-s/wakey/releases/latest) から **Wakey.dmg** をダウンロードします(0.1.0 以降)。
+2. 開いて **Wakey** を **アプリケーション** フォルダにドラッグします。
+3. Wakey を開きます。メニューバーにアイコンが表示されます。
+
+リリース版は Developer ID で署名され、Apple の公証を受けています。
 
 ### ソースからビルドする
 
@@ -155,6 +159,24 @@ open build/Wakey.app
 | `build/Wakey.app/Contents/MacOS/Wakey --status` | 何も変更せずに、Wakey が検出・判断した内容を表示 |
 | `build/Wakey.app/Contents/MacOS/Wakey --snapshot <フォルダ>` | メニューと設定画面をすべての言語で保存 |
 | `swift scripts/make-icon.swift assets/icon.png assets` | `assets/icon.png` からアプリアイコンを作り直す |
+| `scripts/make-dmg.sh 0.1.0` | `build/Wakey.app` を `build/Wakey-0.1.0.dmg` にまとめる |
+
+### リリースする
+
+`v0.1.0` のようなタグをプッシュすると、[GitHub Actions](.github/workflows/build.yml) がテスト、ユニバーサルアプリのビルド、Developer ID での署名、公証を行い、GitHub Releases に `Wakey-0.1.0.dmg` を公開します。リリースノートは [CHANGELOG.md](CHANGELOG.md) のそのバージョンのセクションです。
+
+1. CHANGELOG.md の `[Unreleased]` をバージョンに書き換えます。例: `## [0.1.0] - 2026-11-05`
+2. コミットしてから `git tag v0.1.0 && git push origin main v0.1.0` を実行します。
+
+署名と公証には、次のリポジトリシークレットが必要です。ない場合、DMG はアドホック署名になり、公証もされません。
+
+| シークレット | 値 |
+|---|---|
+| `MACOS_CERT_P12` | Developer ID Application 証明書(.p12)を base64 にしたもの |
+| `MACOS_CERT_PASSWORD` | その .p12 のパスワード |
+| `NOTARY_KEY_P8` | App Store Connect API キー(.p8)を base64 にしたもの |
+| `NOTARY_KEY_ID` | その API キーの Key ID |
+| `NOTARY_ISSUER_ID` | App Store Connect の Issuer ID |
 
 ---
 
