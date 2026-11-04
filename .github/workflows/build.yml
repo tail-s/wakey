@@ -5,6 +5,13 @@ on:
     branches: [main]
     tags: ["v*"]
   pull_request:
+  # Release an existing tag again, for example when its run never got a runner.
+  # Builds the tagged commit with this (main) version of the workflow.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to build and release, for example v0.1.0"
+        required: true
 
 permissions:
   contents: write
@@ -16,6 +23,8 @@ jobs:
     runs-on: macos-15-intel
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # The tag being released: a pushed tag, or the tag given to a manual run. Empty otherwise.
+      RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || (github.ref_type == 'tag' && github.ref_name || '') }}
       # Release signing; all optional. Without them the build is ad hoc signed and not
       # notarized, and lid mode won't work in it.
       MACOS_CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
@@ -26,6 +35,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ env.RELEASE_TAG || github.ref }}
           fetch-depth: 0   # build number = commit count
 
       - name: Select newest Xcode
@@ -53,8 +63,8 @@ jobs:
 
       - name: Build app and DMG
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          [[ "$GITHUB_REF_TYPE" == "tag" ]] || VERSION="0.0.0-dev"
+          VERSION="${RELEASE_TAG#v}"
+          [[ -n "$RELEASE_TAG" ]] || VERSION="0.0.0-dev"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           # No certificate: sign ad hoc instead of looking for one in the runner's keychain.
           export SIGN_IDENTITY="${SIGN_IDENTITY:--}"
@@ -62,7 +72,7 @@ jobs:
           scripts/make-dmg.sh "$VERSION"
 
       - name: Notarize
-        if: github.ref_type == 'tag' && env.SIGN_IDENTITY != '' && env.NOTARY_KEY_P8 != ''
+        if: env.RELEASE_TAG != '' && env.SIGN_IDENTITY != '' && env.NOTARY_KEY_P8 != ''
         run: |
           echo "$NOTARY_KEY_P8" | base64 --decode > "$RUNNER_TEMP/AuthKey.p8"
           NOTARY_KEY_PATH="$RUNNER_TEMP/AuthKey.p8" scripts/notarize.sh "$VERSION"
@@ -73,14 +83,14 @@ jobs:
           path: build/*.dmg
 
       - name: Publish release
-        if: github.ref_type == 'tag'
+        if: env.RELEASE_TAG != ''
         run: |
           # Release notes = this version's section of CHANGELOG.md (falls back to generated notes)
           awk -v v="$VERSION" '/^## / { p = index($0, "[" v "]") > 0; next } /^\[[0-9]/ { p = 0 } p' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
           if [[ -s "$RUNNER_TEMP/notes.md" ]]; then
-            gh release create "$GITHUB_REF_NAME" build/*.dmg --title "Wakey $VERSION" --notes-file "$RUNNER_TEMP/notes.md"
+            gh release create "$RELEASE_TAG" build/*.dmg --title "Wakey $VERSION" --notes-file "$RUNNER_TEMP/notes.md"
           else
-            gh release create "$GITHUB_REF_NAME" build/*.dmg --title "Wakey $VERSION" --generate-notes
+            gh release create "$RELEASE_TAG" build/*.dmg --title "Wakey $VERSION" --generate-notes
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

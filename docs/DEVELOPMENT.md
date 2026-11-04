@@ -62,6 +62,10 @@ requests only test and build. Signing and notarization run only when these repos
 | `NOTARY_KEY_ID` | that key's ID |
 | `NOTARY_ISSUER_ID` | the issuer ID shown above the keys list |
 
+If a release run fails for a reason outside the code (for example it never got a runner), release the same tag again
+from **Actions › Build › Run workflow**, or `gh workflow run build.yml --ref main -f tag=v0.2.0`. It builds the tagged
+commit with the current workflow, so the tag never has to move.
+
 To sign and notarize locally instead:
 
 ```bash
