@@ -9,7 +9,7 @@
   <a href="README.md">English</a> · 한국어 · <a href="README.ja.md">日本語</a>
 </p>
 
-> **상태:** Wakey 0.1.0은 개발 중이고 아직 출시 전이에요. [소스에서 직접 빌드](#소스에서-빌드하기)할 수 있어요.
+> **[Wakey 0.1.0 받기](https://github.com/tail-s/wakey/releases/latest)** · macOS 13 이상 · Apple 실리콘과 Intel 모두 지원
 
 ---
 
@@ -128,7 +128,7 @@ Mac을 쓰지 않으면 아래 단계를 차례로 거쳐요. **AI가 멈추는 
 
 ## 설치
 
-1. [최신 릴리스](https://github.com/tail-s/wakey/releases/latest)에서 **Wakey.dmg**를 받으세요 (0.1.0부터).
+1. [최신 릴리스](https://github.com/tail-s/wakey/releases/latest)에서 **Wakey.dmg**를 받으세요.
 2. 열어서 **Wakey**를 **응용 프로그램** 폴더로 끌어다 놓으세요.
 3. Wakey를 여세요. 메뉴 막대에 아이콘이 나타나요.
 

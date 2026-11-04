@@ -9,7 +9,7 @@
   English · <a href="README.ko.md">한국어</a> · <a href="README.ja.md">日本語</a>
 </p>
 
-> **Status:** Wakey 0.1.0 is in development and hasn't been released yet. You can [build it from source](#build-from-source).
+> **[Download Wakey 0.1.0](https://github.com/tail-s/wakey/releases/latest)** · macOS 13 or later · Apple silicon and Intel
 
 ---
 
@@ -128,7 +128,7 @@ Turn on *Keep going with the lid closed and no display*. Wakey puts the Mac to s
 
 ## Install
 
-1. Download **Wakey.dmg** from the [latest release](https://github.com/tail-s/wakey/releases/latest) (from 0.1.0 on).
+1. Download **Wakey.dmg** from the [latest release](https://github.com/tail-s/wakey/releases/latest).
 2. Open it and drag **Wakey** into the **Applications** folder.
 3. Open Wakey. Its icon appears in the menu bar.
 
