@@ -21,6 +21,16 @@ else
 fi
 
 xcrun notarytool submit "$DMG" "${CREDS[@]}" --wait
-xcrun stapler staple "$DMG"
+
+# Stapling fetches the ticket from Apple's servers, and that connection sometimes drops
+# ("The network connection was lost", error 68). Retry instead of failing the release.
+ATTEMPTS=5
+for attempt in $(seq 1 "$ATTEMPTS"); do
+  if xcrun stapler staple "$DMG"; then break; fi
+  if (( attempt == ATTEMPTS )); then echo "Stapling failed $ATTEMPTS times; giving up."; exit 1; fi
+  delay=$(( attempt * ${STAPLE_RETRY_DELAY:-15} ))
+  echo "Stapling failed (attempt $attempt of $ATTEMPTS); retrying in ${delay}s…"
+  sleep "$delay"
+done
 spctl --assess --type open --context context:primary-signature -v "$DMG"
 echo "Notarized $DMG"
